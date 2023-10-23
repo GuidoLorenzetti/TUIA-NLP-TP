@@ -33,8 +33,8 @@ def scrap_page(categoria):
 
         # Imprimir los enlaces
         for link in url_links:
-            if f"https://www.infobae.com/{link}" not in noticias:
-                noticias.append(f"https://www.infobae.com/{link}")
+            if f"https://www.infobae.com{link}" not in noticias:
+                noticias.append(f"https://www.infobae.com{link}")
     else:
         print(f"No se pudo acceder a la página. Código de estado: {response.status_code}")
 
