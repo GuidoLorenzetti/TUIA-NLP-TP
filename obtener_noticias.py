@@ -25,17 +25,28 @@ def scrap_page(categoria):
         soup = BeautifulSoup(response.text, 'html.parser')
 
         # Encontrar todos los enlaces en la página
-        divs = soup.find_all('div', {"class":'story-card-info'})
+        divs = soup.find_all('div', {"class":'feed-list-wrapper'})
         links = [x.find_all('a', href=True) for x in divs]
         links1 = [item for sublist in links for item in sublist]
         # Filtrar los enlaces que empiezan por "{cateogoria}/" y no están en elementos de imagen
         url_links = [link['href'] for link in links1 if link['href'].startswith(f'/{categoria}/')]
 
+        # Encontrar todos los enlaces en la página
+        divs2 = soup.find_all('div', {"class":'story-card-info'})
+        links2 = [x.find_all('a', href=True) for x in divs2]
+        links2 = [item for sublist in links2 for item in sublist]
+        # Filtrar los enlaces que empiezan por "{cateogoria}/" y no están en elementos de imagen
+        url_links2 = [link['href'] for link in links2 if link['href'].startswith(f'/{categoria}/')]
+
         # Imprimir los enlaces
-        for link in url_links:
-            if f"https://www.infobae.com{link}" not in noticias:
-                noticias.append(f"https://www.infobae.com{link}")
+        for link in url_links+url_links2:
+            if f"https://www.infobae.com/{link}" not in noticias:
+                noticias.append(f"https://www.infobae.com/{link}")
+
     else:
         print(f"No se pudo acceder a la página. Código de estado: {response.status_code}")
 
     return noticias
+
+noticias = scrap_page("salud")
+print(noticias)
