@@ -1,5 +1,3 @@
-#Usamos este script para obtener los datos de la noticia y cargarlos en el dataset
-
 import requests
 import pandas as pd
 import numpy as np
@@ -47,6 +45,3 @@ def scrap_page(categoria):
         print(f"No se pudo acceder a la página. Código de estado: {response.status_code}")
 
     return noticias
-
-noticias = scrap_page("salud")
-print(noticias)
