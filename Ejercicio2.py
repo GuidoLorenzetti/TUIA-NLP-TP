@@ -1,3 +1,8 @@
+"""
+Utilizando los datos de título y categoría del dataset del ejercicio anterior, entrenar un
+modelo de clasificación de noticias en categorías específicas.
+"""
+
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import nltk

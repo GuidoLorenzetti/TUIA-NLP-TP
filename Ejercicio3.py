@@ -13,8 +13,10 @@ import string
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from nltk.probability import FreqDist
 nltk.download('stopwords')
 nltk.download('punkt')
+import itertools
 
 #NORMALIZACION
 # Definir las palabras de parada en español
@@ -43,13 +45,28 @@ for label, text in textos.items():
     textos[label] = text
     
 
-#WORDCLOUD
+#CONTEO DE PALABRAS
 for label, text in textos.items():
-    wordcloud = WordCloud(width = 1200, height = 800, background_color ='white', stopwords = None, min_font_size = 10).generate(text)
-    plt.figure(figsize = (8, 8), facecolor = None)
-    plt.title(label)
-    plt.imshow(wordcloud)
-    plt.axis("off")
-    plt.tight_layout(pad = 0)
-    plt.show()
+    words = word_tokenize(text)
+    fdist_words = FreqDist(words)
+    freq = dict(fdist_words)
+    print(f'Frecuencia de 5 palabras random de {label}:')
+    for key, value in itertools.islice(freq.items(), 5):
+        print(f'{key}: {value}')
+    print("año:", freq['año'])
+    print('\n')
+
+
+#WORDCLOUD
+fig, axes = plt.subplots(2, 2) # SOLO FUNCIONA PARA 4 CATEGORIAS
+axes = axes.flat
+for i in range(4):
+    label = labels[i]  
+    text = textos[label]
+    wordcloud = WordCloud(width = 1000, height = 400, background_color ='white', stopwords = None, min_font_size = 15).generate(text)
+    axes[i].imshow(wordcloud)
+    axes[i].set_title(label)
+    axes[i].axis("off")
+plt.tight_layout()
+plt.show()
     
