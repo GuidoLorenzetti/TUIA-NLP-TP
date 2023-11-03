@@ -4,46 +4,131 @@ import string
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-nltk.download('stopwords')
-nltk.download('punkt')
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns 
+import tensorflow_hub as hub
+import tensorflow as tf
+import plotly.express as px
+from sklearn.decomposition import PCA
 from collections import defaultdict
 
+# Descargar recursos necesarios de NLTK
+nltk.download('stopwords')
+nltk.download('punkt')
+module_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
 
-def ejercicio_4(category):
+global model
+model = hub.load(module_url)
 
-    df = pd.read_csv("archivo.csv")
+def process_text(df, category):
+    # Filtrar el DataFrame por la categoría deseada
+    filtered_df = df[df['categoria'] == category]
 
-    # Inicializa un diccionario vacío para almacenar las noticias por categoría
-    titulo_categoria = {}
+    # Obtener una serie de pandas con los títulos filtrados
+    titles_series = filtered_df['titulo']
 
-    # Itera a través de las filas del DataFrame
-    for index, row in df.iterrows():
-        titulo = row['titulo']
-        categoria = row['categoria']
+    # Convertir la serie en una lista de títulos
+    titles_list = titles_series.tolist()
 
-        # Verifica si la categoría ya está en el diccionario
-        if categoria in titulo_categoria:
-            titulo_categoria[categoria].append(titulo)
-        else:
-            titulo_categoria[categoria] = [titulo]
-  #_______________________________________________________________________________________________________________
-  # En cat guardamos los titulos de la categoria a analizar, sin remover stopwords  
-    cat = titulo_categoria[category]
-  #_______________________________________________________________________________________________________________
-    #Removemos stopwords para cada titulo
+    return titles_list
+
+#_______________________________________________________________________________________________________________
+#Removemos stopwords para cada titulo
+def remove_stopwords(text):
     stop_words = set(stopwords.words('spanish'))
-  
-    def remove_stopwords(text):
-        word_tokens = word_tokenize(text)
-        filtered_text = [word for word in word_tokens if word.casefold() not in stop_words]
-        return " ".join(filtered_text)
+    word_tokens = word_tokenize(text)
+    filtered_text = [word for word in word_tokens if word.casefold() not in stop_words]
+    return " ".join(filtered_text)
 
+#_______________________________________________________________________________________________________________
+# heatmap para ver matriz de correlacion, con stopword y sin stopwords
+def heatmap_sim(datos, titulo):    
+    embeddings = model(datos)
+
+    # Calcular la matriz de correlación de los embeddings
+    matriz_correlacion = np.corrcoef(embeddings)
+
+    # Graficar la matriz de similitud usando un mapa de calor
+    plt.figure(figsize=(20, 16))
+    sns.heatmap(matriz_correlacion, annot=True, cmap='YlGnBu', xticklabels=datos, yticklabels=datos)
+    plt.title(titulo)
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+    plt.show(block = False)
+    
+#_______________________________________________________________________________________________________________
+# Aplica PCA para reducir a 2 dimensiones
+def pca_2d(datos, titulo):
+    
+    embeddings = model(datos)
+
+    pca = PCA(n_components=2)
+    embeddings_2d = pca.fit_transform(embeddings)
+
+    # Grafica los vectores en un gráfico de dispersión
+    plt.figure(figsize=(14, 10))
+    for i, oracion in enumerate(datos):
+        plt.scatter(embeddings_2d[i, 0], embeddings_2d[i, 1], marker='o')
+        plt.annotate(oracion, (embeddings_2d[i, 0], embeddings_2d[i, 1]))
+
+    plt.xlabel('Componente Principal 1')
+    plt.ylabel('Componente Principal 2')
+    plt.title(titulo)
+    plt.grid(True)
+    plt.show(block = False)
+        
+#_______________________________________________________________________________________________________________
+# Aplica PCA para reducir a 3 dimensiones
+def pca_3d(datos, titulo):
+    embeddings = model(datos)
+    pca = PCA(n_components=3)
+    embeddings_3d = pca.fit_transform(embeddings)
+    # Crear un DataFrame con los datos
+    df2 = pd.DataFrame(embeddings_3d, columns=['x', 'y', 'z'])
+    df2['word'] = datos
+
+    # Visualizar los embeddings en 3D usando plotly
+    fig = px.scatter_3d(df2, x='x', y='y', z='z', text='word', size_max=18, opacity=0.7)
+
+    # Agregar un título a la figura
+    fig.update_layout(
+        title=titulo,  # Agregar el título que desees
+        scene=dict(
+        xaxis_title='Componente Principal 1',
+        yaxis_title='Componente Principal 2',
+        zaxis_title='Componente Principal 3'))
+
+    # Mostrar el gráfico
+    fig.show(block = False)
+
+def leer_filtrar(category,file_path):    
+    
+    df = pd.read_csv(file_path)
+    
+    # En cat guardamos los titulos de la categoria a analizar, sin remover stopwords  
+    cat = process_text(df, category)
+    
     textos = defaultdict(list)
-
-    labels = df.categoria.unique()
-
-    for index, row in df.iterrows():
+    for _, row in df.iterrows():
         text = row['titulo'].lower()
         text = remove_stopwords(text)
         text = re.sub(f'[{string.punctuation}]', '', text)
         textos[row['categoria']].append(text)
+    
+    return cat, textos[category]
+
+# title_no_filtrado, title_filtrado = leer_filtrar("salud", "archivo.csv")
+
+# heatmap_sim(title_no_filtrado, "Matriz de Similitud con stopwords")
+# heatmap_sim(title_filtrado, "Matriz de Similitud sin stopwords")
+
+# pca_2d(title_no_filtrado, 'Visualización de oraciones usando PCA con stopwords')
+# pca_2d(title_filtrado, 'Visualización de oraciones usando PCA sin stopwords')
+
+# pca_3d(title_no_filtrado, "Visualización en 3D con PCA s/stopwords")
+# pca_3d(title_filtrado, "Visualización en 3D con PCA c/stopwords")
+
+
+
