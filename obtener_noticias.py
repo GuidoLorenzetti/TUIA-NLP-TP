@@ -1,9 +1,9 @@
 import requests
 import pandas as pd
-import numpy as np
-import re
 import requests
 from bs4 import BeautifulSoup
+import torch
+from transformers import BartForConditionalGeneration, BartTokenizer
 
 def scrap_page(categoria):
     noticias = []
@@ -42,64 +42,162 @@ def scrap_page(categoria):
 
     return noticias
 
-def agregar_text_title(df, url, titulo, texto, categoria):
-    # Crear una nueva fila como un diccionario
-    nueva_fila = {'url': url,'titulo': titulo, 'texto': texto, 'categoria': categoria}
+from bs4 import BeautifulSoup
 
-    # Usar el método append para agregar la nueva fila al DataFrame
-    df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
+def scrap_new(response):
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-    return df
+    title_element = soup.find('h1', class_='article-headline')
+    title_text = title_element.text.strip()
 
-def title_text(df, url, categoria):
-    #Acá voy a tener una lista de urls, la recorro y hago esto para cada noticia
-    # URL de la página a la que deseas hacer web scraping
-    #Aca lo cargo a la fila del csv en df["url"]
+    subheadline_element = soup.find('h2', class_='article-subheadline')
+    subheadline_text = subheadline_element.text.strip()
 
+    paragraph_elements = soup.find_all('p', class_='paragraph')
 
-    # Realiza una solicitud GET a la página
-    response = requests.get(url)
+    paragraphs = []  # Lista para almacenar los párrafos
 
-    # Verifica si la solicitud fue exitosa (código 200)
-    if response.status_code == 200:
-        # Parsea el contenido HTML de la página usando BeautifulSoup
-        soup = BeautifulSoup(response.text, 'html.parser')
+    # Agrega el subtítulo como el primer párrafo
+    paragraphs.append(subheadline_text)
 
-        # Encuentra el elemento HTML que contiene el título
-        # Ajusta el selector CSS según la estructura de la página
-        title_element = soup.find('h1', class_='article-headline')
+    for paragraph_element in paragraph_elements:
+        # Extrae y almacena el texto del párrafo en la lista de párrafos
+        paragraph_text = paragraph_element.text.strip()
+        paragraphs.append(paragraph_text)
 
-        # Extrae y muestra el texto del título
-        title_text = title_element.text.strip()
-        #print(f'Título: {title_text}')
+    # Combina los párrafos en un solo texto, separados por saltos de línea
+    texto = '\n'.join(paragraphs)
 
-        # Encuentra los elementos HTML que son párrafos
-        # En este caso, simplemente buscamos todos los elementos <p> en la página
-        paragraph_elements = soup.find_all('p', class_='paragraph')
+    return title_text, texto
 
-        texto = ""
-        # Itera a través de los elementos y muestra el texto de los párrafos
-        for paragraph_element in paragraph_elements:
-            # Extrae y muestra el texto del párrafo
-            paragraph_text = paragraph_element.text.strip()
-            texto = texto + paragraph_text
+def generate_summaries(article_texts, max_length=500, num_beams=4, length_penalty=2.0, batch_size=4):
+    # Dividir los textos en lotes más pequeños
+    text_batches = [article_texts[i:i + batch_size] for i in range(0, len(article_texts), batch_size)]
+    
+    # Definir el dispositivo (GPU si está disponible, de lo contrario, CPU)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        df = agregar_text_title(df, url, title_text, texto, categoria)
+    model_name = "facebook/bart-large-cnn"
+    model = BartForConditionalGeneration.from_pretrained(model_name).to(device)
+    tokenizer = BartTokenizer.from_pretrained(model_name)
 
-    else:
-        print(f'Error al obtener la página. Código de estado: {response.status_code}')
+    summaries = []
 
-    return df
+    for batch in text_batches:
+        # Tokenización por lotes
+        input_ids = tokenizer(
+            batch,
+            return_tensors="pt",
+            padding="max_length",
+            truncation=True,
+            max_length=1024  # Ajusta el tamaño máximo según tus necesidades
+        )["input_ids"].to(device)
 
-def cargar_csv():
+        # Generación de resúmenes por lotes
+        output_ids = model.generate(
+            input_ids=input_ids,
+            max_length=max_length,  # Ajusta la longitud del resumen deseado
+            num_beams=num_beams,
+            length_penalty=length_penalty,
+            early_stopping=True,
+        )
+
+        # Decodificación de los resúmenes en texto
+        batch_summaries = [tokenizer.decode(ids, skip_special_tokens=True, clean_up_tokenization_spaces=False) for ids in output_ids]
+        summaries.extend(batch_summaries)
+
+    return summaries
+
+def load_csv():
     df = pd.DataFrame(columns=['url', 'titulo', 'texto', 'categoria'])
     categoria = ["economia", "deportes", "salud", "tecno"]
-
+    print("Cargando noticias...")
     for categ in categoria:
         noticias = scrap_page(categ)
-        for url in noticias:
-            df = title_text(df, url, categ)
-
+        for url in noticias[:10]:
+            response = requests.get(url)
+            if response.status_code == 200:                
+                title_text, text = scrap_new(response)
+                nueva_fila = {'url': url,'titulo': title_text, 'texto': text, 'categoria': categ}
+                df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
+    print("Noticias cargadas!")
+    print("Generando resumenes...")
+    df['resumen'] = generate_summaries(df['texto'].tolist())
+    print("Resumenes generados!")
     df.to_csv('noticias.csv', sep=';', index=False) 
 
     return df
+
+def generate_category_summary(df, category, max_length=500, num_beams=4, length_penalty=2.0):
+    # Filtrar el DataFrame por la categoría especificada
+    category_df = df[df['categoria'] == category]
+
+    if category_df.empty:
+        print(f"No se encontraron noticias para la categoría '{category}'.")
+        return ""
+
+    # Definir el dispositivo (GPU si está disponible, de lo contrario, CPU)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    model_name = "facebook/bart-large-cnn"
+    model = BartForConditionalGeneration.from_pretrained(model_name).to(device)
+    tokenizer = BartTokenizer.from_pretrained(model_name)
+
+    summaries = []
+
+    for index, row in category_df.iterrows():
+        article_text = row['resumen']
+        input_ids = tokenizer(
+            article_text,
+            return_tensors="pt",
+            padding="max_length",
+            truncation=True,
+            max_length=1024  # Ajusta el tamaño máximo según tus necesidades
+        )["input_ids"].to(device)
+
+        output_ids = model.generate(
+            input_ids=input_ids,
+            max_length=max_length,  # Ajusta la longitud del resumen deseado
+            num_beams=num_beams,
+            length_penalty=length_penalty,
+            early_stopping=True,
+        )
+
+        summary = tokenizer.decode(output_ids[0], skip_special_tokens=True, clean_up_tokenization_spaces=False)
+        summaries.append(summary)
+
+    # Combinar resúmenes individuales en un resumen completo
+    result_summary = " ".join(summaries)
+
+    return result_summary
+
+def obtener_precio_dolar():
+    url = "https://www.infobae.com"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Encuentra todos los divs con la clase "exchange-dolar-container"
+        divs = soup.find_all('div', class_='exchange-dolar-item')
+
+        # Inicializa variables para precios
+        precio_bn = None
+        precio_libre = None
+        
+        # Itera a través de los divs para buscar los datos de interés
+        for div in divs:
+            # print(div)
+            # print("\n")
+            aria_label = div.find_next('a', {'aria-label': True})
+            if aria_label:
+                label_text = aria_label['aria-label']
+                if label_text == 'Dólar Banco Nación':
+                    precio_bn = div.find("p", class_="exchange-dolar-amount").text
+                elif label_text == 'Dólar Libre':
+                    precio_libre = div.find("p", class_="exchange-dolar-amount").text
+        
+        return precio_bn, precio_libre
+    else:
+        print(f"No se pudo acceder a la página. Código de estado: {response.status_code}")
+        return None, None
