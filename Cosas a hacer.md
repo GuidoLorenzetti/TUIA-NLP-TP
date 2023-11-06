@@ -1,0 +1,8 @@
+- Hacer que el 1 funque desde la notebook de informe
+- Pasar los otros .ipynb a .py
+- Pasar todo a funciones
+- Terminar informe.ipynb
+- Escribir bien el readme
+- Comentar todo bien
+- Borrar archivos innecesarios como este 
+- Ver si los resultados del 2 y el 3 no pueden ser mejor comprendidos o arreglados
