@@ -1,3 +1,9 @@
+"""
+Use los modelos de embedding propuestos sobre el final de la Unidad 2 para evaluar la
+similitud entre los títulos de las noticias de una de las categorías.
+Reflexione sobre las limitaciones del modelo en base a los resultados obtenidos, en
+contraposición a los resultados que hubiera esperado obtener.
+"""
 import pandas as pd
 import re
 import string

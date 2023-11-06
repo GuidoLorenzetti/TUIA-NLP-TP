@@ -33,3 +33,19 @@ def libraries_import():
     nltk.download('stopwords')
     nltk.download('punkt')
     import itertools
+
+    #EJ 4
+    import pandas as pd
+    import re
+    import string
+    import nltk
+    from nltk.corpus import stopwords
+    from nltk.tokenize import word_tokenize
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns 
+    import tensorflow_hub as hub
+    import tensorflow as tf
+    import plotly.express as px
+    from sklearn.decomposition import PCA
+    from collections import defaultdict
