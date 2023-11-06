@@ -15,8 +15,6 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.probability import FreqDist
-nltk.download('stopwords')
-nltk.download('punkt')
 import itertools
 
 # Función para eliminar las stopwords en español de una frase
@@ -41,28 +39,35 @@ def df2texts(df):
 
 #Normalización y limpiado de textos
 def texts_normalization(textos):
+    nltk.download('stopwords')
+    nltk.download('punkt')
     for label, text in textos.items():
         text = text.lower()
         text = remove_sp_stopwords(text)
         text = re.sub(f'[{string.punctuation}]', '', text)
+        text = text.replace('“', '').replace('”', '')
         textos[label] = text
 
     return textos
 
 #Conteo de palabras
-def word_count(textos):
+def texts2freqs(textos):
+    freqs = {}
     for label, text in textos.items():
         words = word_tokenize(text)
-        fdist_words = FreqDist(words)
-        freq = dict(fdist_words)
-        print(f'Frecuencia de 5 palabras random de {label}:')
-        for key, value in itertools.islice(freq.items(), 5):
-            print(f'{key}: {value}')
-        print("año:", freq['año'])
-        print('\n')
+        freq = FreqDist(words)
+        freqs[label] = dict(freq)
+    return freqs
 
-#Nube de palabras
-def wordcloud(textos): # SOLO FUNCIONA PARA 4 de cada
+# Top 5 de palabras más frecuentes
+def top_freqs(freqs, label):
+    print(f'5 palabras más frecuentes de {label}:')
+    freq = freqs[label]
+    sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)
+    print(dict(sorted_items[:5]))
+
+#Nubes de palabras
+def wordclouds(textos): # SOLO FUNCIONA PARA 4 de cada
     fig, axes = plt.subplots(2, 2) 
     axes = axes.flat
     for i, (label, text) in enumerate(textos.items()):
@@ -71,4 +76,12 @@ def wordcloud(textos): # SOLO FUNCIONA PARA 4 de cada
         axes[i].set_title(label)
         axes[i].axis("off")
     plt.tight_layout()
+    plt.show()
+
+# Sólo una nube de palabras
+def wordcloud(textos, label):
+    text = textos[label]
+    wordcloud = WordCloud(width = 1000, height = 400, background_color ='white', stopwords = None, min_font_size = 15).generate(text)
+    plt.imshow(wordcloud)
+    plt.axis("off")
     plt.show()

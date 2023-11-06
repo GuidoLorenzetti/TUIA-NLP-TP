@@ -1,7 +1,7 @@
 def libraries_import():
     # EJ 1
     import warnings
-    #warnings.filterwarnings("ignore")
+    warnings.filterwarnings("ignore")
     import requests
     from bs4 import BeautifulSoup
     import pandas as pd
@@ -15,10 +15,6 @@ def libraries_import():
     import numpy as np
     from sklearn.linear_model import LogisticRegression
     import pandas as pd
-    # Cargar el tokenizador y modelo preentrenado de BERT en español
-    sp_bert_name = 'dccuchile/bert-base-spanish-wwm-cased'
-    sp_bert_tokenizer = BertTokenizer.from_pretrained(sp_bert_name)
-    sp_bert_model = BertModel.from_pretrained(sp_bert_name)
 
     # EJ 3
     import pandas as pd
@@ -30,8 +26,6 @@ def libraries_import():
     from nltk.corpus import stopwords
     from nltk.tokenize import word_tokenize
     from nltk.probability import FreqDist
-    nltk.download('stopwords')
-    nltk.download('punkt')
     import itertools
 
     #EJ 4

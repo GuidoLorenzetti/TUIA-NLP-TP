@@ -10,11 +10,13 @@ import torch
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 import pandas as pd
-# Cargar el tokenizador y modelo preentrenado de BERT en español
-sp_bert_name = 'dccuchile/bert-base-spanish-wwm-cased'
-sp_bert_tokenizer = BertTokenizer.from_pretrained(sp_bert_name)
-sp_bert_model = BertModel.from_pretrained(sp_bert_name)
 
+# Cargar el tokenizador y modelo preentrenado de BERT en español
+def load_bert():
+    global sp_bert_model, sp_bert_tokenizer
+    sp_bert_name = 'dccuchile/bert-base-spanish-wwm-cased'
+    sp_bert_tokenizer = BertTokenizer.from_pretrained(sp_bert_name)
+    sp_bert_model = BertModel.from_pretrained(sp_bert_name)
 
 # Obtener los embeddings de BERT para una lista de textos
 def get_sp_bert_embeddings(texts):
@@ -28,23 +30,20 @@ def get_sp_bert_embeddings(texts):
     return np.array(embeddings)
 
 
-# Preparado de datos
-def data_preprocessing_and_split(df):
+# Separado de datos
+def splitting(df):
     # Preparar X e y
     X = df.titulo.values
     y = df.categoria.values
     # División del dataset
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    # Obtenemos los embeddings de BERT para los conjuntos de entrenamiento y prueba
-    X_train_vectorized = get_sp_bert_embeddings(X_train)
-    X_test_vectorized = get_sp_bert_embeddings(X_test)
-    return X_train_vectorized, X_test_vectorized, y_train, y_test
 
+    return X_train, X_test, y_train, y_test
 
 # Entrenamiento del modelo
 def training(X_train, y_train):
     # Creación y entrenamiento del modelo de Regresión Logística
-    modelo_LR = LogisticRegression(max_iter=1000, multi_class='multinomial')
+    modelo_LR = LogisticRegression(max_iter=1000, multi_class='multinomial', class_weight='balanced')
     modelo_LR.fit(X_train, y_train)
     return modelo_LR
 
@@ -55,9 +54,10 @@ def evaluation(modelo_LR, X_test, y_test):
     # Evaluación
     acc_LR = accuracy_score(y_test, y_pred_LR)
     report_LR = classification_report(y_test, y_pred_LR, zero_division=1)
-    print("Precisión Regresión Logística:", acc_LR)
-    print("Reporte de clasificación Regresión Logística:\n", report_LR)
+    print("Precisión:", acc_LR)
+    print("Reporte de clasificación:\n", report_LR)
     # Matriz de confusión
+    print("Matriz de confusión:")
     confusion = confusion_matrix(y_test, y_pred_LR)
     print(confusion, '\n')
 
@@ -71,4 +71,4 @@ def classify_new_phrases(modelo_LR, new_phrases):
     new_predictions = modelo_LR.predict(new_phrases_vectorized)
     # Mostrando las predicciones
     for text, label in zip(new_phrases, new_predictions):
-        print(f"Texto: '{text}.Clasificación predicha: {label}\n'")
+        print(f"Clasificación predicha de '{text}': {label}")

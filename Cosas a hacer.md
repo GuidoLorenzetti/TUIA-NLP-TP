@@ -3,5 +3,4 @@
 - Pasar todo a funciones
 - Terminar informe.ipynb
 - Comentar todo bien
-- Borrar archivos innecesarios como este 
-- Ver si los resultados del 2 y el 3 no pueden ser mejor comprendidos o arreglados
+- Borrar archivos innecesarios como este
