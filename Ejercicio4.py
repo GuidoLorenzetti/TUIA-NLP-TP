@@ -49,69 +49,69 @@ def remove_stopwords(text):
 
 #_______________________________________________________________________________________________________________
 # heatmap para ver matriz de correlacion, con stopword y sin stopwords
-def heatmap_sim(datos, titulo):    
-    embeddings = model(datos)
+def heatmap_sim(datos, titulo):
+    with tf.device('/CPU:0'):
+        embeddings = model(datos)
 
-    # Calcular la matriz de correlación de los embeddings
-    matriz_correlacion = np.corrcoef(embeddings)
+        # Calcular la matriz de correlación de los embeddings
+        matriz_correlacion = np.corrcoef(embeddings)
 
-    # Graficar la matriz de similitud usando un mapa de calor
-    plt.figure(figsize=(20, 16))
-    sns.heatmap(matriz_correlacion, annot=True, cmap='YlGnBu', xticklabels=datos, yticklabels=datos)
-    plt.title(titulo)
-    plt.xticks(rotation=90)
-    plt.yticks(rotation=0)
-    plt.tight_layout()
-    plt.show(block = False)
+        # Graficar la matriz de similitud usando un mapa de calor
+        plt.figure(figsize=(20, 16))
+        sns.heatmap(matriz_correlacion, annot=True, cmap='YlGnBu', xticklabels=datos, yticklabels=datos)
+        plt.title(titulo)
+        plt.xticks(rotation=90)
+        plt.yticks(rotation=0)
+        plt.tight_layout()
+        plt.show(block = False)
     
 #_______________________________________________________________________________________________________________
 # Aplica PCA para reducir a 2 dimensiones
 def pca_2d(datos, titulo):
-    
-    embeddings = model(datos)
+    with tf.device('/CPU:0'):
+        embeddings = model(datos)
 
-    pca = PCA(n_components=2)
-    embeddings_2d = pca.fit_transform(embeddings)
+        pca = PCA(n_components=2)
+        embeddings_2d = pca.fit_transform(embeddings)
 
-    # Grafica los vectores en un gráfico de dispersión
-    plt.figure(figsize=(14, 10))
-    for i, oracion in enumerate(datos):
-        plt.scatter(embeddings_2d[i, 0], embeddings_2d[i, 1], marker='o')
-        plt.annotate(oracion, (embeddings_2d[i, 0], embeddings_2d[i, 1]))
+        # Grafica los vectores en un gráfico de dispersión
+        plt.figure(figsize=(14, 10))
+        for i, oracion in enumerate(datos):
+            plt.scatter(embeddings_2d[i, 0], embeddings_2d[i, 1], marker='o')
+            plt.annotate(oracion, (embeddings_2d[i, 0], embeddings_2d[i, 1]))
 
-    plt.xlabel('Componente Principal 1')
-    plt.ylabel('Componente Principal 2')
-    plt.title(titulo)
-    plt.grid(True)
-    plt.show(block = False)
-        
+        plt.xlabel('Componente Principal 1')
+        plt.ylabel('Componente Principal 2')
+        plt.title(titulo)
+        plt.grid(True)
+        plt.show(block = False)
+            
 #_______________________________________________________________________________________________________________
 # Aplica PCA para reducir a 3 dimensiones
 def pca_3d(datos, titulo):
-    embeddings = model(datos)
-    pca = PCA(n_components=3)
-    embeddings_3d = pca.fit_transform(embeddings)
-    # Crear un DataFrame con los datos
-    df2 = pd.DataFrame(embeddings_3d, columns=['x', 'y', 'z'])
-    df2['word'] = datos
+    with tf.device('/CPU:0'):
+        embeddings = model(datos)
+        pca = PCA(n_components=3)
+        embeddings_3d = pca.fit_transform(embeddings)
+        # Crear un DataFrame con los datos
+        df2 = pd.DataFrame(embeddings_3d, columns=['x', 'y', 'z'])
+        df2['word'] = datos
 
-    # Visualizar los embeddings en 3D usando plotly
-    fig = px.scatter_3d(df2, x='x', y='y', z='z', text='word', size_max=18, opacity=0.7)
+        # Visualizar los embeddings en 3D usando plotly
+        fig = px.scatter_3d(df2, x='x', y='y', z='z', text='word', size_max=18, opacity=0.7)
 
-    # Agregar un título a la figura
-    fig.update_layout(
-        title=titulo,  # Agregar el título que desees
-        scene=dict(
-        xaxis_title='Componente Principal 1',
-        yaxis_title='Componente Principal 2',
-        zaxis_title='Componente Principal 3'))
+        # Agregar un título a la figura
+        fig.update_layout(
+            title=titulo,  # Agregar el título que desees
+            scene=dict(
+            xaxis_title='Componente Principal 1',
+            yaxis_title='Componente Principal 2',
+            zaxis_title='Componente Principal 3'))
 
-    # Mostrar el gráfico
-    fig.show(block = False)
+        # Mostrar el gráfico
+        fig.show(block = False)
 
-def leer_filtrar(category,file_path):    
-    
-    df = pd.read_csv(file_path)
+def leer_filtrar(category,df):    
     
     # En cat guardamos los titulos de la categoria a analizar, sin remover stopwords  
     cat = process_text(df, category)

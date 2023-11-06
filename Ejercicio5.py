@@ -2,7 +2,6 @@ import telebot
 from obtener_noticias import *
 from aiogram import Bot, Dispatcher, types, executor
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from obtener_noticias import *
 import threading
 import time
 import logging
@@ -19,6 +18,7 @@ salud = InlineKeyboardButton(text="❤️‍🩹 Salud", callback_data="salud")
 tecnologia = InlineKeyboardButton(text="💻 Tecnologia", callback_data="tecno")
 deportes = InlineKeyboardButton(text="🏃🏻 Deportes", callback_data="deportes")
 economia = InlineKeyboardButton(text="💸 Economia", callback_data="economia")
+
 salud2 = InlineKeyboardButton(text="❤️‍🩹 Salud", callback_data="resume_salud")
 tecnologia2 = InlineKeyboardButton(text="💻 Tecnologia", callback_data="resume_tecno")
 deportes2 = InlineKeyboardButton(text="🏃🏻 Deportes", callback_data="resume_deportes")
@@ -30,7 +30,7 @@ keyboard_inline2 = InlineKeyboardMarkup(inline_keyboard=[[salud2, tecnologia2], 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
     welcome_message = (
-        "¡Bienvenido RobotTimes el Bot de Noticias definitivo! 📰\n"
+        "¡Bienvenido a InfoBot el Bot de Noticias definitivo! 📰\n"
         "Estoy aquí para ayudarte a mantenerte informado con las últimas noticias.\n\n"
         "Puedes usar los siguientes comandos:\n"
         "/noticias - Obtén noticias de diferentes categorías.\n"
@@ -165,7 +165,7 @@ def load_data():
     global today_news
     logging.info('Iniciando carga de datos...')
     try:
-        today_news = load_csv()  # Carga el DataFrame en today_news global
+        today_news = load_csv(resume=True)  # Carga el DataFrame en today_news global
         logging.info('Carga de datos exitosa. Registros cargados: %d', len(today_news))
     except Exception as e:
         logging.error('Error al cargar datos: %s', str(e))

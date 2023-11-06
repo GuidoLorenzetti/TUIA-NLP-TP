@@ -15,7 +15,6 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.probability import FreqDist
-import itertools
 
 # Función para eliminar las stopwords en español de una frase
 def remove_sp_stopwords(text):

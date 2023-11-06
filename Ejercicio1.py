@@ -7,9 +7,6 @@ Construir un dataset haciendo web scraping de páginas web de su elección.
     ○ texto (contenido del artículo)
 """
 
-#Importaciones ya hechas pero que permiten el coloreo sintáctico
-import warnings
-#warnings.filterwarnings("ignore")
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd

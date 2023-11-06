@@ -9,7 +9,6 @@ from transformers import BertTokenizer, BertModel
 import torch
 import numpy as np
 from sklearn.linear_model import LogisticRegression
-import pandas as pd
 
 # Cargar el tokenizador y modelo preentrenado de BERT en español
 def load_bert():
@@ -28,7 +27,6 @@ def get_sp_bert_embeddings(texts):
         # Usamos el embedding del token [CLS] como la representación del texto
         embeddings.append(outputs.last_hidden_state[0][0].numpy())
     return np.array(embeddings)
-
 
 # Separado de datos
 def splitting(df):

@@ -108,8 +108,8 @@ def generate_summaries(article_texts, max_length=500, num_beams=4, length_penalt
 
     return summaries
 
-def load_csv():
-    df = pd.DataFrame(columns=['url', 'titulo', 'texto', 'categoria'])
+def load_csv(resume=False):
+    df = pd.DataFrame(columns=['url', 'titulo', 'texto', 'categoria', 'resumen'])
     categoria = ["economia", "deportes", "salud", "tecno"]
     print("Cargando noticias...")
     for categ in categoria:
@@ -121,10 +121,11 @@ def load_csv():
                 nueva_fila = {'url': url,'titulo': title_text, 'texto': text, 'categoria': categ}
                 df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
     print("Noticias cargadas!")
-    print("Generando resumenes...")
-    df['resumen'] = generate_summaries(df['texto'].tolist())
-    print("Resumenes generados!")
-    df.to_csv('noticias.csv', sep=';', index=False) 
+    if resume==True:
+        print("Generando resumenes...")
+        df['resumen'] = generate_summaries(df['texto'].tolist())
+        print("Resumenes generados!")
+    df.to_csv('noticias.csv', sep=';', index=True) 
 
     return df
 
@@ -172,7 +173,7 @@ def generate_category_summary(df, category, max_length=500, num_beams=4, length_
     return result_summary
 
 def obtener_precio_dolar():
-    url = "https://www.infobae.com"
+    url = "https://www.infobae.com/economia/"
     response = requests.get(url)
     
     if response.status_code == 200:

@@ -1,6 +1,0 @@
-- Hacer que el 1 funque desde la notebook de informe
-- Pasar los otros .ipynb a .py
-- Pasar todo a funciones
-- Terminar informe.ipynb
-- Comentar todo bien
-- Borrar archivos innecesarios como este
